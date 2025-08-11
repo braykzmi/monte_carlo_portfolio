@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+    env_file: ./backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    profiles: ["dev"]
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/usr/src/app
+    depends_on:
+      - backend
+    profiles: ["dev"]
+
+  backend-prod:
+    build:
+      context: ./backend
+    env_file: ./backend/.env
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+    profiles: ["prod"]
+
+  frontend-prod:
+    build:
+      context: ./frontend
+      target: prod
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend-prod
+    profiles: ["prod"]
+
+# NOTE: If using Desktop API, you may need to run backend on host or use:
+#   network_mode: host
+# under the backend service (Linux only). See README.
